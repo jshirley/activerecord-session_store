@@ -75,7 +75,7 @@ module ActionDispatch
               session = @@session_class.new(:session_id => sid, :data => {})
             end
             env[SESSION_RECORD_KEY] = session
-            [sid, session.data]
+            [session.session_id, session.data]
           end
         end
 
@@ -96,6 +96,10 @@ module ActionDispatch
           end
         end
 
+        def write_session(req, sid, session_data, options)
+          set_session(req.env, sid, session_data, options)
+        end
+
         def destroy_session(env, session_id, options)
           logger.silence_logger do
             if sid = current_session_id(env)
@@ -109,15 +113,14 @@ module ActionDispatch
 
         def get_session_model(env, sid)
           if env[ENV_SESSION_OPTIONS_KEY][:id].nil?
-            env[SESSION_RECORD_KEY] = find_session(sid)
+            env[SESSION_RECORD_KEY] = find_session(nil, sid)
           else
-            env[SESSION_RECORD_KEY] ||= find_session(sid)
+            env[SESSION_RECORD_KEY] ||= find_session(nil, sid)
           end
         end
 
-        def find_session(id)
-          @@session_class.find_by_session_id(id) ||
-            @@session_class.new(:session_id => id, :data => {})
+        def find_session(req, sid)
+          get_session(req.env, sid)
         end
 
         def logger
